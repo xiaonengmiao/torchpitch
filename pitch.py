@@ -45,14 +45,14 @@ def _cumulative_mean_normalized_difference(
     a = torch.fft.rfft(y_frames, frame_length, dim=-1)
     b = torch.fft.rfft(y_frames[..., torch.arange(win_length, 0, -1)], frame_length, dim=-1)
     acf_frames = torch.fft.irfft(a * b, frame_length, dim=-1)[..., win_length:]
-    acf_frames[np.abs(acf_frames) < 1e-6] = 0
+    acf_frames[torch.abs(acf_frames) < 1e-6] = 0
 
     # Energy terms.
     energy_frames = (y_frames**2).cumsum(-1)
     energy_frames = (
         energy_frames[..., win_length:] - energy_frames[..., :-win_length]
     )
-    energy_frames[np.abs(energy_frames) < 1e-6] = 0
+    energy_frames[torch.abs(energy_frames) < 1e-6] = 0
 
     # Difference function.
     yin_frames = energy_frames[..., :1] + energy_frames - 2 * acf_frames
@@ -240,11 +240,17 @@ def yin(
 
 if __name__ == "__main__":
     import torchaudio
-    from librosa import util
     wave, sr = torchaudio.load("./data/data_aishell3/test/wav/SSB1831/SSB18310007.wav")
     if sr != 8000:
         wave = torchaudio.functional.resample(wave, orig_freq=sr, new_freq=8000)
         sr = 8000
 
+    wave.requires_grad_()
     f0 = yin(wave.squeeze(0), fmin=20, fmax=2000, sr=8000)
+
+    loss = F.mse_loss(f0, torch.zeros_like(f0))
+    loss.backward()
+
+    print("".format(loss.item()))
+    print("Gradient wave sum: " + str(wave.grad.sum()))
     print(f0)
