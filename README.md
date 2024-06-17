@@ -1,4 +1,4 @@
-# pitch
+# torchpitch
 Fundamental frequency (F0) estimation using the YIN algorithm.
 
 This package "translates" the [librosa.yin](https://github.com/librosa/librosa/blob/main/librosa/core/pitch.py) in torch.Tensor.
